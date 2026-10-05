@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAGI SYSTEM - DATA LOGGER</title>
+    <style>
+        body {
+            background-color: #000; color: #ff9900;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0; padding: 2vh 2vw; height: 96vh;
+            display: flex; justify-content: center; align-items: center; overflow: hidden;
+        }
+        .magi-monitor {
+            border: 3px solid #ff9900; width: 100%; height: 100%;
+            position: relative; box-sizing: border-box; background: #000;
+        }
+        .header-left { position: absolute; top: 20px; left: 30px; }
+        .header-left h1 { font-size: 4em; margin: 0; letter-spacing: 15px; text-shadow: 2px 2px 0px #aa6600; }
+        .green-lines { width: 300px; height: 4px; background-color: #2e8b57; margin-top: 5px; box-shadow: 0 8px 0 #2e8b57; }
+        .header-right { position: absolute; top: 20px; right: 30px; text-align: right; }
+        .header-right h1 { font-size: 4em; margin: 0; letter-spacing: 15px; text-shadow: 2px 2px 0px #aa6600; }
+        
+        .core-container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 800px; height: 500px; }
+        .magi-center-text { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); font-size: 3em; font-weight: bold; color: #ff9900; letter-spacing: 5px; z-index: 10; }
+        
+        .core-panel {
+            position: absolute; background-color: #42bcf5; color: #000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            font-weight: bold; font-size: 2em; transition: all 0.5s ease; cursor: pointer;
+        }
+        .core-subtext { font-size: 0.4em; color: #111; margin-top: 10px; letter-spacing: 2px; }
+        .result-text { font-size: 1.2em; margin-top: 10px; }
+        
+        .balthasar { top: 0; left: 50%; transform: translateX(-50%); width: 350px; height: 220px; clip-path: polygon(0 0, 100% 0, 100% 75%, 75% 100%, 25% 100%, 0 75%); }
+        .casper { bottom: 0; left: 0; width: 350px; height: 220px; clip-path: polygon(0 0, 75% 0, 100% 25%, 100% 100%, 0 100%); }
+        .melchior { bottom: 0; right: 0; width: 350px; height: 220px; clip-path: polygon(25% 0, 100% 0, 100% 100%, 0 100%, 0 25%); }
+        
+        .input-section { position: absolute; bottom: 20px; left: 30px; width: calc(100% - 60px); font-size: 1.2em; }
+        .input-row { display: flex; align-items: center; margin-bottom: 5px; }
+        .input-row label { width: 150px; color: #ff9900; }
+        .input-row input { flex-grow: 1; background: transparent; border: 1px solid #ff9900; color: #ff9900; font-family: inherit; font-size: 1em; padding: 5px; outline: none; }
+        
+        #final-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); color: #fff; display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100;
+        }
+        #final-overlay h1 { font-size: 6em; margin: 0; letter-spacing: 20px; }
+        #final-overlay p { font-size: 1.5em; color: #ff9900; }
+        
+        /* 깃허브 설정창 */
+        .github-settings {
+            position: absolute; top: 120px; right: 30px; border: 1px solid #ff9900; padding: 15px; background: rgba(0,0,0,0.8);
+            font-size: 0.8em; width: 300px; display: none;
+        }
+        .github-settings input { width: 100%; background: #222; color: #ff9900; border: 1px solid #444; margin-top: 5px; margin-bottom: 10px; }
+        .github-settings button { background: #ff9900; color: #000; border: none; padding: 5px; width: 100%; cursor: pointer; font-weight: bold; }
+        .settings-toggle { position: absolute; top: 80px; right: 30px; background: none; color: #ff9900; border: 1px solid #ff9900; cursor: pointer; padding: 5px 10px; }
+    </style>
+</head>
+<body>
+    <div class="magi-monitor">
+        <div class="header-left">
+            <h1>質 問</h1>
+            <div class="green-lines"></div>
+        </div>
+        <div class="header-right">
+            <h1>解 決</h1>
+            <div class="green-lines" style="float: right;"></div>
+        </div>
+
+        <button class="settings-toggle" onclick="toggleSettings()">DATA SETTINGS</button>
+        <div class="github-settings" id="gh-settings">
+            <label>GitHub Token (PAT):</label>
+            <input type="password" id="gh-token" placeholder="ghp_xxxxxxxx...">
+            <label>Repo Owner:</label>
+            <input type="text" id="gh-owner" placeholder="아이디">
+            <label>Repo Name:</label>
+            <input type="text" id="gh-repo" placeholder="저장소 이름">
+            <label>File Path (e.g., data/magi.json):</label>
+            <input type="text" id="gh-path" placeholder="magi_data.json" value="magi_data.json">
+            <button onclick="toggleSettings()">SAVE CONFIG</button>
+        </div>
+
+        <div class="core-container">
+            <div class="magi-center-text">MAGI</div>
+            <div class="core-panel balthasar" id="magi2" onclick="toggleVote(2)">
+                BALTHASAR・2
+                <div class="core-subtext">[배란기]</div>
+                <div class="result-text" id="res2">STANDBY</div>
+            </div>
+            <div class="core-panel casper" id="magi3" onclick="toggleVote(3)">
+                CASPER・3
+                <div class="core-subtext">[황체기]</div>
+                <div class="result-text" id="res3">STANDBY</div>
+            </div>
+            <div class="core-panel melchior" id="magi1" onclick="toggleVote(1)">
+                MELCHIOR・1
+                <div class="core-subtext">[난포기]</div>
+                <div class="result-text" id="res1">STANDBY</div>
+            </div>
+        </div>
+
+        <div class="input-section">
+            <div class="input-row">
+                <label>question:</label>
+                <input type="text" id="agenda-input" placeholder="안건을 입력하고 Enter를 누르십시오." onkeypress="handleEnter(event)">
+            </div>
+        </div>
+    </div>
+
+    <div id="final-overlay">
+        <h1 id="overlay-title">合 意</h1>
+        <p id="overlay-desc">세 자아가 안건에 모두 동의하였습니다.</p>
+        <p id="log-status" style="color: #42bcf5; margin-top: 20px;"></p>
+        <button style="margin-top: 30px; padding: 10px 30px; background: #ff9900; color: #000; font-weight: bold; cursor: pointer;" onclick="resetSystem()">SYSTEM RESET</button>
+    </div>
+
+    <script>
+        // 현재 각 자아의 투표 상태 (true=합의, false=거절)
+        let votes = { 1: true, 2: true, 3: true };
+        
+        function toggleSettings() {
+            const el = document.getElementById('gh-settings');
+            el.style.display = el.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // 패널 클릭 시 합의/거절 수동 전환 (데이터 수집용)
+        function toggleVote(coreId) {
+            votes[coreId] = !votes[coreId];
+            const panel = document.getElementById('magi' + coreId);
+            const res = document.getElementById('res' + coreId);
+            
+            if(votes[coreId]) {
+                res.innerHTML = "승 인 (合 意)";
+                res.style.color = "#2e8b57";
+                panel.style.backgroundColor = "#ccffcc";
+            } else {
+                res.innerHTML = "거 절 (拒 絶)";
+                res.style.color = "#cc0000";
+                panel.style.backgroundColor = "#ffcccc";
+            }
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter') {
+                processVote();
+            }
+        }
+
+        async function processVote() {
+            const agenda = document.getElementById('agenda-input').value.trim();
+            if(!agenda) { alert("질문을 입력해 주십시오."); return; }
+
+            const isApproved = votes[1] && votes[2] && votes[3];
+            
+            const overlay = document.getElementById('final-overlay');
+            const title = document.getElementById('overlay-title');
+            const desc = document.getElementById('overlay-desc');
+            const logStatus = document.getElementById('log-status');
+
+            overlay.style.display = 'flex';
+            
+            if(isApproved) {
+                title.innerText = "合 意 (APPROVE)"; title.style.color = "#33ff33";
+                desc.innerText = "만장일치로 안건이 가결되었습니다.";
+            } else {
+                title.innerText = "拒 絶 (DENY)"; title.style.color = "#ff3333";
+                desc.innerText = "안건이 기각되었습니다.";
+            }
+
+            // 데이터 객체 생성
+            const record = {
+                timestamp: new Date().toISOString(),
+                agenda: agenda,
+                votes: {
+                    magi1_follicular: votes[1] ? "APPROVE" : "DENY",
+                    magi2_ovulatory: votes[2] ? "APPROVE" : "DENY",
+                    magi3_luteal: votes[3] ? "APPROVE" : "DENY"
+                },
+                final_decision: isApproved ? "APPROVE" : "DENY"
+            };
+
+            logStatus.innerText = "GitHub API를 통해 데이터를 로깅 중입니다...";
+            await logToGitHub(record, logStatus);
+        }
+
+        // 한글 깨짐 방지용 Base64 인코딩/디코딩
+        function utf8_to_b64(str) { return window.btoa(unescape(encodeURIComponent(str))); }
+        function b64_to_utf8(str) { return decodeURIComponent(escape(window.atob(str))); }
+
+        async function logToGitHub(newRecord, statusElement) {
+            const token = document.getElementById('gh-token').value.trim();
+            const owner = document.getElementById('gh-owner').value.trim();
+            const repo = document.getElementById('gh-repo').value.trim();
+            const path = document.getElementById('gh-path').value.trim();
+
+            if(!token || !owner || !repo || !path) {
+                statusElement.innerText = "설정(DATA SETTINGS)에서 GitHub 정보를 모두 입력해야 기록됩니다.";
+                statusElement.style.color = "#ff3333";
+                return;
+            }
+
+            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+            const headers = {
+                "Authorization": `token ${token}`,
+                "Accept": "application/vnd.github.v3+json",
+                "Content-Type": "application/json"
+            };
+
+            try {
+                // 1. 기존 파일 가져오기
+                let fileSha = "";
+                let currentData = [];
+                
+                const getRes = await fetch(apiUrl, { method: 'GET', headers });
+                
+                if (getRes.status === 200) {
+                    const getJson = await getRes.json();
+                    fileSha = getJson.sha;
+                    const decodedContent = b64_to_utf8(getJson.content);
+                    if(decodedContent) currentData = JSON.parse(decodedContent);
+                } else if (getRes.status !== 404) {
+                    throw new Error("GitHub API 통신 오류: " + getRes.status);
+                }
+
+                // 2. 새 데이터 추가
+                currentData.push(newRecord);
+
+                // 3. 파일 업데이트
+                const updateRes = await fetch(apiUrl, {
+                    method: 'PUT',
+                    headers,
+                    body: JSON.stringify({
+                        message: "MAGI System Data Log Update",
+                        content: utf8_to_b64(JSON.stringify(currentData, null, 2)),
+                        sha: fileSha || undefined // 새 파일이면 sha 생략
+                    })
+                });
+
+                if (updateRes.ok) {
+                    statusElement.innerText = "DATA LOGGING COMPLETE. 파일이 성공적으로 갱신되었습니다.";
+                    statusElement.style.color = "#33ff33";
+                } else {
+                    const err = await updateRes.json();
+                    throw new Error(err.message);
+                }
+            } catch (error) {
+                statusElement.innerText = `기록 실패: ${error.message}`;
+                statusElement.style.color = "#ff3333";
+            }
+        }
+
+        function resetSystem() {
+            document.getElementById('final-overlay').style.display = 'none';
+            document.getElementById('agenda-input').value = '';
+            document.getElementById('log-status').innerText = '';
+            
+            // 패널 초기화
+            votes = { 1: true, 2: true, 3: true };
+            const panels = [1, 2, 3];
+            panels.forEach(id => {
+                document.getElementById('magi' + id).style.backgroundColor = "#42bcf5";
+                document.getElementById('res' + id).innerHTML = "STANDBY";
+                document.getElementById('res' + id).style.color = "black";
+            });
+            document.getElementById('agenda-input').focus();
+        }
+    </script>
+</body>
+</html>
