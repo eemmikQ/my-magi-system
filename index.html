@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My MAGI System</title>
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: #33ff33;
+            font-family: 'Courier New', Courier, monospace;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 { color: #ff9900; letter-spacing: 2px; }
+        .magi-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        .magi-core {
+            border: 2px solid #ff9900;
+            padding: 20px;
+            width: 25%;
+            min-width: 200px;
+            margin: 10px;
+            background-color: #1a1a1a;
+            border-radius: 10px;
+        }
+        .magi-name { font-size: 1.2em; font-weight: bold; margin-bottom: 15px; }
+        .status-approve { color: #33ff33; font-weight: bold; font-size: 1.5em; }
+        .status-deny { color: #ff3333; font-weight: bold; font-size: 1.5em; }
+        input, button {
+            padding: 10px;
+            margin: 10px;
+            font-size: 1em;
+            font-family: inherit;
+        }
+        input { width: 50%; background: #222; color: #fff; border: 1px solid #ff9900; }
+        button {
+            background-color: #ff9900;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background-color: #cc7a00; }
+    </style>
+</head>
+<body>
+
+    <h1>MAGI SYSTEM v1.0</h1>
+    <p>현재 안건을 입력하고 시스템의 판결을 기다리십시오.</p>
+
+    <input type="text" id="agenda" placeholder="예: 오늘 야식으로 마라탕을 시켜 먹을 것인가?">
+    <br>
+    <button onclick="startMagiVote()">의결 시작 (SYSTEM START)</button>
+
+    <h2 id="final-result" style="color: #fff; margin-top: 20px;"></h2>
+
+    <div class="magi-container">
+        <!-- MAGI 1: 난포기 -->
+        <div class="magi-core">
+            <div class="magi-name">MAGI-1<br>[난포기의 나]</div>
+            <div id="magi1-vote">-</div>
+            <p id="magi1-reason" style="font-size: 0.8em; color: #aaa;"></p>
+        </div>
+
+        <!-- MAGI 2: 배란기 -->
+        <div class="magi-core">
+            <div class="magi-name">MAGI-2<br>[배란기의 나]</div>
+            <div id="magi2-vote">-</div>
+            <p id="magi2-reason" style="font-size: 0.8em; color: #aaa;"></p>
+        </div>
+
+        <!-- MAGI 3: 황체기 -->
+        <div class="magi-core">
+            <div class="magi-name">MAGI-3<br>[황체기의 나]</div>
+            <div id="magi3-vote">-</div>
+            <p id="magi3-reason" style="font-size: 0.8em; color: #aaa;"></p>
+        </div>
+    </div>
+
+    <script>
+        function startMagiVote() {
+            const agenda = document.getElementById('agenda').value;
+            if(!agenda) {
+                alert("안건을 입력해 주십시오.");
+                return;
+            }
+
+            // 난포기의 나 (이성/효율 중시)
+            const magi1 = Math.random() > 0.4; // 60% 확률로 가결
+            document.getElementById('magi1-vote').innerHTML = magi1 ? "<span class='status-approve'>가결 (APPROVE)</span>" : "<span class='status-deny'>부결 (DENY)</span>";
+            document.getElementById('magi1-reason').innerText = magi1 ? "미래를 위해 생산적인 결정이다." : "효율성이 떨어진다. 기각한다.";
+
+            // 배란기의 나 (충동/사교성 중시)
+            const magi2 = Math.random() > 0.3; // 70% 확률로 가결
+            document.getElementById('magi2-vote').innerHTML = magi2 ? "<span class='status-approve'>가결 (APPROVE)</span>" : "<span class='status-deny'>부결 (DENY)</span>";
+            document.getElementById('magi2-reason').innerText = magi2 ? "재밌겠다! 무조건 고!" : "재미없어 보인다. 패스.";
+
+            // 황체기의 나 (휴식/보수적 중시)
+            const magi3 = Math.random() > 0.7; // 30% 확률로 가결 (대부분 반대함)
+            document.getElementById('magi3-vote').innerHTML = magi3 ? "<span class='status-approve'>가결 (APPROVE)</span>" : "<span class='status-deny'>부결 (DENY)</span>";
+            document.getElementById('magi3-reason').innerText = magi3 ? "어쩔 수 없지. 이번만 허락한다." : "다 귀찮다. 내버려 둬. 무조건 반대.";
+
+            // 최종 판결 로직 (다수결)
+            let approveCount = (magi1 ? 1 : 0) + (magi2 ? 1 : 0) + (magi3 ? 1 : 0);
+            const finalResultElement = document.getElementById('final-result');
+            
+            if(approveCount >= 2) {
+                finalResultElement.innerHTML = `최종 판결: <span style="color:#33ff33">가결되었습니다.</span>`;
+            } else {
+                finalResultElement.innerHTML = `최종 판결: <span style="color:#ff3333">부결되었습니다.</span> (황체기의 강력한 반대 작용 유력)`;
+            }
+        }
+    </script>
+</body>
+</html>
