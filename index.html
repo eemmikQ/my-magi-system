@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAGI SYSTEM - DECISION JOURNAL v10 (CLOUD SYNC)</title>
+    <style>
+        body { background-color: #000; color: #ff9900; font-family: 'Courier New', Courier, monospace; margin: 0; padding: 2vh 2vw; height: 96vh; display: flex; justify-content: center; align-items: center; overflow: hidden; user-select: none; }
+        .magi-monitor { border: 2px solid #ff9900; width: 100%; height: 100%; position: relative; box-sizing: border-box; background: #000; }
+        
+        .header-left { position: absolute; top: 20px; left: 30px; }
+        .header-left h1 { font-size: 4em; margin: 0; letter-spacing: 15px; font-weight: bold; text-shadow: 2px 2px 0px #884400; }
+        .green-lines { width: 300px; height: 3px; background-color: #2e8b57; margin-top: 5px; box-shadow: 0 6px 0 #2e8b57; }
+        
+        .header-right { position: absolute; top: 20px; right: 30px; text-align: right; }
+        .header-right h1 { font-size: 4em; margin: 0; letter-spacing: 15px; font-weight: bold; text-shadow: 2px 2px 0px #884400; }
+        .info-box { display: inline-block; border: 2px solid #42bcf5; color: #42bcf5; padding: 5px 15px; font-size: 2em; font-weight: bold; margin-top: 40px; letter-spacing: 5px; }
+
+        .archive-toggle { position: absolute; top: 220px; right: 30px; background: transparent; color: #ff9900; border: 1px solid #ff9900; cursor: pointer; padding: 8px 15px; font-family: inherit; font-weight: bold; font-size: 1.1em; transition: 0.2s; z-index: 20; }
+        .archive-toggle:hover { background: #ff9900; color: #000; }
+
+        .code-info { position: absolute; top: 150px; left: 30px; font-size: 1.1em; line-height: 1.4; color: #ff9900; }
+        .code-info .highlight { font-size: 1.8em; font-weight: bold; margin-bottom: 10px; }
+
+        .core-container { position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%); width: 850px; height: 500px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 30px; }
+        .magi-center-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3.5em; font-weight: bold; color: #ff9900; letter-spacing: 5px; z-index: 10; text-shadow: 2px 2px 0px #884400; background: #000; padding: 0 10px; }
+        
+        .core-panel { background-color: #42bcf5; color: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; font-weight: bold; font-size: 2em; transition: background-color 0.3s ease, transform 0.2s ease; cursor: pointer; position: relative; }
+        .core-panel:hover { transform: scale(1.02); }
+        .panel-1 { clip-path: polygon(15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%, 0 15%); }
+        .panel-2 { clip-path: polygon(0 0, 85% 0, 100% 15%, 100% 100%, 15% 100%, 0 85%); }
+        .panel-3 { clip-path: polygon(0 15%, 15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%); }
+        .panel-4 { clip-path: polygon(0 0, 100% 0, 100% 85%, 85% 100%, 15% 100%, 0 85%); }
+
+        .core-name { display: block; }
+        .core-status { font-size: 0.8em; margin-top: 15px; font-weight: bold; display: none; }
+        .core-comment { font-size: 0.35em; color: #222; margin-top: 10px; max-width: 80%; text-align: center; font-weight: normal; font-family: sans-serif; display: none; }
+
+        @keyframes textBlink { 0%, 100% { opacity: 1; text-shadow: 0 0 10px #ff9900; } 50% { opacity: 0.1; text-shadow: none; } }
+        .processing { background-color: #111 !important; color: #ff9900 !important; }
+        .processing .core-name { opacity: 0.3; color: #ff9900; }
+        .processing .core-status { display: block !important; color: #ff9900 !important; animation: textBlink 0.4s infinite; font-size: 1.2em; letter-spacing: 5px; margin-top: 20px; }
+        .processing .core-comment { display: none !important; }
+
+        .status-approve { background-color: #2e8b57 !important; color: #000 !important; }
+        .status-deny { background-color: #cc0000 !important; color: #fff !important; }
+        .status-standby { background-color: #42bcf5; color: #000; }
+
+        .input-section { position: absolute; bottom: 20px; left: 30px; width: calc(100% - 60px); font-size: 1.2em; }
+        .input-row { display: flex; align-items: center; margin-bottom: 5px; }
+        .input-row label { width: 180px; color: #ff9900; }
+        .input-row input { flex-grow: 1; background: transparent; border: none; border-bottom: 2px solid #ff9900; color: #ff9900; font-family: inherit; font-size: 1.2em; padding: 5px; outline: none; }
+        .btn-small { background: transparent; color: #ff9900; border: 1px solid #ff9900; cursor: pointer; padding: 5px 10px; margin-left: 10px; font-family: inherit; font-size: 0.8em; }
+        .btn-small:hover { background: #ff9900; color: #000; }
+
+        .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 100; }
+        .modal-box { border: 2px solid #ff9900; background: #000; padding: 30px; width: 500px; max-height: 90vh; overflow-y: auto; }
+        .modal-box h2 { margin: 0 0 20px 0; border-bottom: 2px solid #2e8b57; padding-bottom: 10px; }
+        .modal-row { margin-bottom: 15px; display: flex; flex-direction: column; }
+        .modal-row label { margin-bottom: 8px; font-weight: bold; color: #42bcf5; font-size: 0.9em; }
+        .modal-row input { background: #111; color: #ff9900; border: 1px solid #ff9900; padding: 10px; font-family: inherit; font-size: 1.1em; outline: none; }
+        
+        .vote-toggle { display: flex; gap: 10px; }
+        .vote-btn { flex: 1; background: #222; color: #ff9900; border: 1px solid #ff9900; padding: 15px; font-family: inherit; font-size: 1.2em; font-weight: bold; cursor: pointer; }
+        .vote-btn.selected-approve { background: #2e8b57; color: #000; border-color: #2e8b57; }
+        .vote-btn.selected-deny { background: #cc0000; color: #fff; border-color: #cc0000; }
+        .comment-input { background: #111; color: #ff9900; border: 1px solid #ff9900; padding: 10px; font-family: inherit; font-size: 1em; resize: none; height: 80px; outline: none; }
+        .action-btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; }
+        .action-btns button { background: #ff9900; color: #000; border: none; padding: 10px 20px; font-family: inherit; font-weight: bold; cursor: pointer; }
+        .action-btns button.outline { background: transparent; border: 1px solid #ff9900; color: #ff9900; }
+
+        .archive-box { width: 750px; max-height: 80%; display: flex; flex-direction: column; }
+        .archive-header { padding: 20px 30px; border-bottom: 2px solid #ff9900; display: flex; justify-content: space-between; align-items: center; }
+        .archive-list { overflow-y: auto; padding: 0 30px; flex: 1; }
+        .archive-item { border-bottom: 1px solid #333; padding: 20px 0; display: flex; align-items: center; cursor: pointer; transition: 0.2s; }
+        .archive-item:hover { background: #111; padding-left: 10px; border-color: #ff9900; }
+        
+        .archive-left { width: 150px; display: flex; flex-direction: column; }
+        .archive-code { color: #42bcf5; font-weight: bold; font-size: 1.2em; }
+        .archive-date { color: #888; font-size: 0.7em; margin-top: 5px; }
+        
+        .archive-agenda { flex: 1; color: #ff9900; font-size: 1.1em; padding-right: 20px; word-break: keep-all; }
+        .archive-status { font-weight: bold; width: 120px; text-align: right; font-size: 1.1em; }
+        .archive-del-btn { background: transparent; color: #cc0000; border: 1px solid #cc0000; padding: 5px 10px; margin-left: 15px; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 0.8em; transition: 0.2s; }
+        .archive-del-btn:hover { background: #cc0000; color: #fff; }
+
+        /* 클라우드 동기화 오버레이 */
+        #sync-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 999; }
+        #sync-overlay h1 { color: #ff9900; font-size: 3em; letter-spacing: 10px; animation: textBlink 1s infinite; }
+        #sync-message { color: #42bcf5; font-size: 1.2em; margin-top: 20px; font-weight: bold; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+
+    <div class="magi-monitor">
+        <div class="header-left">
+            <h1>質 問</h1>
+            <div class="green-lines"></div>
+        </div>
+        <div class="header-right">
+            <h1>解 決</h1>
+            <div class="green-lines" style="float: right;"></div>
+            <div style="clear: both;"></div>
+            <div class="info-box" id="global-status">情 報</div>
+        </div>
+
+        <button class="archive-toggle" onclick="openArchiveAuth()">DATA ARCHIVE</button>
+
+        <div class="code-info">
+            <div class="highlight">CODE: <span id="display-code">----</span></div>
+            FILE: MAGI__SYS<br>
+            EXTENTION: 3023<br>
+            PRIORITY: <span id="display-priority">---</span><br>
+            DATE: <span id="display-date">----</span>
+        </div>
+
+        <div class="core-container" id="core-container">
+            <div class="magi-center-text">MAGI</div>
+            
+            <div class="core-panel panel-1" id="magi1" onclick="openEditor(1, 'MELCHIOR・1', '난포기')">
+                <span class="core-name">MELCHIOR・1</span>
+                <div class="core-status" id="status1">STANDBY</div>
+                <div class="core-comment" id="comment1"></div>
+            </div>
+
+            <div class="core-panel panel-2" id="magi2" onclick="openEditor(2, 'BALTHASAR・2', '황체기')">
+                <span class="core-name">BALTHASAR・2</span>
+                <div class="core-status" id="status2">STANDBY</div>
+                <div class="core-comment" id="comment2"></div>
+            </div>
+
+            <div class="core-panel panel-3" id="magi3" onclick="openEditor(3, 'CASPER・3', '배란기')">
+                <span class="core-name">CASPER・3</span>
+                <div class="core-status" id="status3">STANDBY</div>
+                <div class="core-comment" id="comment3"></div>
+            </div>
+
+            <div class="core-panel panel-4" id="magi4" onclick="openEditor(4, 'MARY・4', '월경기')">
+                <span class="core-name">MARY・4</span>
+                <div class="core-status" id="status4">STANDBY</div>
+                <div class="core-comment" id="comment4"></div>
+            </div>
+        </div>
+
+        <div class="input-section">
+            <div class="input-row">
+                <label>access code:</label>
+                <input type="password" id="access-code" autocomplete="off">
+                <button class="btn-small" onclick="openSecuritySettings()">[LINK SETTINGS]</button>
+            </div>
+            <div class="input-row">
+                <label>question:</label>
+                <!-- Placeholder 완전히 제거 -->
+                <input type="text" id="query-input" onkeypress="handleEnter(event)" autocomplete="off">
+            </div>
+        </div>
+    </div>
+
+    <!-- 클라우드 동기화 오버레이 -->
+    <div id="sync-overlay">
+        <h1>UPLINK ESTABLISHED</h1>
+        <div id="sync-message">FETCHING DATABASE FROM GITHUB...</div>
+    </div>
+
+    <!-- 1. 초기 시스템 셋업 모달 (GitHub 연동) -->
+    <div id="setup-overlay" class="modal-overlay">
+        <div class="modal-box">
+            <h2>SYSTEM INITIALIZATION</h2>
+            <div class="modal-row">
+                <label>LOCAL ACCESS CODE (앱 잠금 해제용)</label>
+                <input type="password" id="setup-pw">
+            </div>
+            <div class="modal-row">
+                <label>GITHUB PAT (Personal Access Token)</label>
+                <input type="password" id="setup-gh-pat">
+            </div>
+            <div class="modal-row">
+                <label>GITHUB REPO OWNER (유저명)</label>
+                <input type="text" id="setup-gh-owner">
+            </div>
+            <div class="modal-row">
+                <label>GITHUB REPO NAME (저장소명)</label>
+                <input type="text" id="setup-gh-repo">
+            </div>
+            <div class="modal-row">
+                <label>FILE PATH (예: magi_data.json)</label>
+                <input type="text" id="setup-gh-path" value="magi_journal.json">
+            </div>
+            <div class="action-btns">
+                <button onclick="initializeSystem()">INITIALIZE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 환경설정 수정 모달 -->
+    <div id="security-overlay" class="modal-overlay">
+        <div class="modal-box">
+            <h2>GITHUB LINK SETTINGS</h2>
+            <div class="modal-row">
+                <label>LOCAL ACCESS CODE (기존 암호)</label>
+                <input type="password" id="sec-pw">
+            </div>
+            <div class="modal-row">
+                <label>GITHUB PAT</label>
+                <input type="password" id="sec-gh-pat">
+            </div>
+            <div class="modal-row">
+                <label>GITHUB REPO OWNER</label>
+                <input type="text" id="sec-gh-owner">
+            </div>
+            <div class="modal-row">
+                <label>GITHUB REPO NAME</label>
+                <input type="text" id="sec-gh-repo">
+            </div>
+            <div class="modal-row">
+                <label>FILE PATH</label>
+                <input type="text" id="sec-gh-path">
+            </div>
+            <div class="action-btns">
+                <button class="outline" onclick="closeSecuritySettings()">CANCEL</button>
+                <button onclick="changeSettings()">SAVE CONFIG</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. 판결 에디터 모달 -->
+    <div id="editor-overlay" class="modal-overlay">
+        <div class="modal-box">
+            <h2 id="editor-title">ACCESS: CASPER・3</h2>
+            <div class="modal-row">
+                <label>VOTE DECISION</label>
+                <div class="vote-toggle">
+                    <button class="vote-btn" id="btn-approve" onclick="selectVote('APPROVE')">合 意 (APPROVE)</button>
+                    <button class="vote-btn" id="btn-deny" onclick="selectVote('DENY')">拒 絶 (DENY)</button>
+                </div>
+            </div>
+            <div class="modal-row">
+                <label>COMMENT</label>
+                <textarea class="comment-input" id="editor-comment"></textarea>
+            </div>
+            <div class="action-btns">
+                <button class="outline" onclick="closeEditor()">CANCEL</button>
+                <button onclick="saveRecord()">SAVE LOG</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. 아카이브 인증 모달 -->
+    <div id="archive-auth-overlay" class="modal-overlay">
+        <div class="modal-box">
+            <h2>ARCHIVE AUTHORIZATION</h2>
+            <div class="modal-row">
+                <label>ACCESS CODE REQUIRED</label>
+                <input type="password" id="archive-auth-pw" autocomplete="new-password" onkeypress="handleArchiveAuthEnter(event)">
+            </div>
+            <div class="action-btns">
+                <button class="outline" onclick="closeArchiveAuth()">CANCEL</button>
+                <button onclick="verifyAndOpenArchive()">VERIFY</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. 아카이브 열람 모달 -->
+    <div id="archive-overlay" class="modal-overlay">
+        <div class="modal-box archive-box">
+            <div class="archive-header">
+                <h2 style="border:none; margin:0;">DATA ARCHIVE</h2>
+                <button class="btn-small" onclick="closeArchive()">CLOSE X</button>
+            </div>
+            <div class="archive-list" id="archive-list"></div>
+        </div>
+    </div>
+
+    <script>
+        // 메모리 상의 DB (로컬 스토리지 저장 안 함)
+        let magiDB = {}; 
+        let isDbLoaded = false;
+        let ghFileSha = ""; 
+        
+        // 환경설정 (로컬 스토리지에 저장)
+        let magiConfig = JSON.parse(localStorage.getItem('magi_config')) || null;
+        
+        let currentCode = "";
+        let currentAgendaText = "";
+        let editingCoreId = null;
+        let tempVote = null;
+
+        // Base64 유니코드(한글) 인코딩/디코딩 헬퍼 함수
+        function utf8_to_b64(str) { return window.btoa(unescape(encodeURIComponent(str))); }
+        function b64_to_utf8(str) { return decodeURIComponent(escape(window.atob(str))); }
+
+        window.onload = () => {
+            if (!magiConfig) {
+                document.getElementById('setup-overlay').style.display = 'flex';
+            }
+        };
+
+        function initializeSystem() {
+            const pw = document.getElementById('setup-pw').value;
+            const pat = document.getElementById('setup-gh-pat').value;
+            const owner = document.getElementById('setup-gh-owner').value;
+            const repo = document.getElementById('setup-gh-repo').value;
+            const path = document.getElementById('setup-gh-path').value;
+            
+            if (!pw || !pat || !owner || !repo || !path) {
+                alert("모든 필드를 입력해야 합니다.");
+                return;
+            }
+            
+            magiConfig = { localCode: pw, ghPat: pat, ghOwner: owner, ghRepo: repo, ghPath: path };
+            localStorage.setItem('magi_config', JSON.stringify(magiConfig));
+            document.getElementById('setup-overlay').style.display = 'none';
+        }
+
+        function verifyAccessCode(inputCode) {
+            if (!magiConfig || inputCode !== magiConfig.localCode) {
+                const globalBox = document.getElementById('global-status');
+                globalBox.innerText = "拒 絶"; 
+                globalBox.style.color = "#ff3333"; 
+                globalBox.style.borderColor = "#ff3333";
+                alert("ACCESS DENIED: 유효하지 않은 액세스 코드입니다.");
+                return false;
+            }
+            return true;
+        }
+
+        // --- GITHUB 연동 로직 ---
+        async function fetchGitHubDB() {
+            const url = `https://api.github.com/repos/${magiConfig.ghOwner}/${magiConfig.ghRepo}/contents/${magiConfig.ghPath}`;
+            const headers = { "Authorization": `token ${magiConfig.ghPat}`, "Accept": "application/vnd.github.v3+json" };
+            
+            try {
+                const res = await fetch(url, { headers });
+                if (res.ok) {
+                    const data = await res.json();
+                    ghFileSha = data.sha;
+                    magiDB = JSON.parse(b64_to_utf8(data.content));
+                } else if (res.status === 404) {
+                    magiDB = {};
+                    ghFileSha = "";
+                } else {
+                    throw new Error(`HTTP ${res.status}`);
+                }
+                isDbLoaded = true;
+                return true;
+            } catch (e) {
+                alert("GITHUB 로드 실패: " + e.message);
+                return false;
+            }
+        }
+
+        async function pushGitHubDB() {
+            const url = `https://api.github.com/repos/${magiConfig.ghOwner}/${magiConfig.ghRepo}/contents/${magiConfig.ghPath}`;
+            const headers = { "Authorization": `token ${magiConfig.ghPat}`, "Accept": "application/vnd.github.v3+json", "Content-Type": "application/json" };
+            
+            try {
+                // SHA 최신화 (충돌 방지)
+                let currentSha = ghFileSha;
+                const getRes = await fetch(url, { headers });
+                if (getRes.ok) {
+                    const data = await getRes.json();
+                    currentSha = data.sha;
+                }
+
+                const contentB64 = utf8_to_b64(JSON.stringify(magiDB, null, 2));
+                const body = {
+                    message: "MAGI System DB Update",
+                    content: contentB64,
+                    sha: currentSha || undefined
+                };
+
+                const putRes = await fetch(url, { method: 'PUT', headers, body: JSON.stringify(body) });
+                if (!putRes.ok) throw new Error(`HTTP ${putRes.status}`);
+                const putData = await putRes.json();
+                ghFileSha = putData.content.sha;
+                return true;
+            } catch (e) {
+                alert("GITHUB 저장 실패: " + e.message);
+                return false;
+            }
+        }
+
+        async function ensureDbLoaded() {
+            if (isDbLoaded) return true;
+            document.getElementById('sync-overlay').style.display = 'flex';
+            document.getElementById('sync-message').innerText = "DOWNLOADING DATABASE FROM GITHUB...";
+            const success = await fetchGitHubDB();
+            document.getElementById('sync-overlay').style.display = 'none';
+            return success;
+        }
+
+        // --- 환경설정 수정 ---
+        function openSecuritySettings() {
+            if (!magiConfig) return;
+            document.getElementById('security-overlay').style.display = 'flex';
+            document.getElementById('sec-pw').value = '';
+            document.getElementById('sec-gh-pat').value = magiConfig.ghPat;
+            document.getElementById('sec-gh-owner').value = magiConfig.ghOwner;
+            document.getElementById('sec-gh-repo').value = magiConfig.ghRepo;
+            document.getElementById('sec-gh-path').value = magiConfig.ghPath;
+        }
+
+        function closeSecuritySettings() {
+            document.getElementById('security-overlay').style.display = 'none';
+        }
+
+        function changeSettings() {
+            const pwInput = document.getElementById('sec-pw').value;
+            if (pwInput !== magiConfig.localCode) {
+                alert("ACCESS DENIED: 기존 로컬 코드가 일치하지 않습니다.");
+                return;
+            }
+            magiConfig.ghPat = document.getElementById('sec-gh-pat').value;
+            magiConfig.ghOwner = document.getElementById('sec-gh-owner').value;
+            magiConfig.ghRepo = document.getElementById('sec-gh-repo').value;
+            magiConfig.ghPath = document.getElementById('sec-gh-path').value;
+            
+            localStorage.setItem('magi_config', JSON.stringify(magiConfig));
+            closeSecuritySettings();
+        }
+
+        // --- 메인 시스템 ---
+        function calculatePriority(text) {
+            const manualMatch = text.match(/^!(AAA|AA|A|B|C|D|F)\s+/i);
+            if (manualMatch) {
+                return { priority: manualMatch[1].toUpperCase(), cleanText: text.replace(/^!(AAA|AA|A|B|C|D|F)\s+/i, '').trim() };
+            }
+            return { priority: '---', cleanText: text }; 
+        }
+
+        async function handleEnter(e) {
+            if (e.key === 'Enter') {
+                const inputCode = document.getElementById('access-code').value;
+                if (!verifyAccessCode(inputCode)) return;
+
+                const rawInput = document.getElementById('query-input').value.trim();
+                if (!rawInput) return;
+
+                // DB 로드 확인
+                if (!(await ensureDbLoaded())) return;
+                
+                const parsedData = calculatePriority(rawInput);
+                currentAgendaText = parsedData.cleanText;
+                const currentPriority = parsedData.priority;
+                
+                const existingCode = Object.keys(magiDB).find(code => magiDB[code].agenda === currentAgendaText);
+                let isNewRecord = false;
+
+                if (existingCode) {
+                    currentCode = existingCode;
+                    if (currentPriority !== '---' && magiDB[currentCode].priority !== currentPriority) {
+                        magiDB[currentCode].priority = currentPriority;
+                        isNewRecord = true; // 변경사항 PUSH 필요
+                    }
+                } else {
+                    currentCode = generateUniqueAlphanumericCode();
+                    magiDB[currentCode] = {
+                        agenda: currentAgendaText,
+                        priority: currentPriority,
+                        timestamp: getFormattedDate(),
+                        1: { status: 'STANDBY', comment: '' },
+                        2: { status: 'STANDBY', comment: '' },
+                        3: { status: 'STANDBY', comment: '' },
+                        4: { status: 'STANDBY', comment: '' }
+                    };
+                    isNewRecord = true;
+                }
+
+                document.getElementById('query-input').value = currentAgendaText;
+                document.getElementById('display-code').innerText = currentCode;
+                
+                playSearchAnimation();
+
+                // 백그라운드 깃허브 PUSH
+                if (isNewRecord) {
+                    pushGitHubDB();
+                }
+            }
+        }
+
+        function getFormattedDate() {
+            const now = new Date();
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const hh = String(now.getHours()).padStart(2, '0');
+            const min = String(now.getMinutes()).padStart(2, '0');
+            return `${yyyy}.${mm}.${dd} ${hh}:${min}`;
+        }
+
+        function generateUniqueAlphanumericCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code;
+            do {
+                code = '';
+                for (let i = 0; i < 4; i++) {
+                    code += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+            } while (magiDB[code]);
+            return code;
+        }
+
+        function playSearchAnimation() {
+            document.getElementById('global-status').innerText = "検 索";
+            document.getElementById('global-status').style.color = "#ff9900";
+            document.getElementById('global-status').style.borderColor = "#ff9900";
+            
+            document.getElementById('display-priority').innerText = "---";
+            document.getElementById('display-date').innerText = "----";
+
+            [1, 2, 3, 4].forEach(id => {
+                const panel = document.getElementById(`magi${id}`);
+                panel.className = `core-panel panel-${id} processing`;
+                document.getElementById(`status${id}`).innerText = "審 議 中";
+            });
+
+            setTimeout(() => { renderCurrentAgenda(); }, 1200);
+        }
+
+        function renderCurrentAgenda() {
+            if(!currentCode) return;
+            const record = magiDB[currentCode];
+            
+            document.getElementById('display-priority').innerText = record.priority || '---';
+            document.getElementById('display-date').innerText = record.timestamp || '----';
+
+            let approveCount = 0;
+            let completeCount = 0;
+
+            [1, 2, 3, 4].forEach(id => {
+                const data = record[id];
+                const panel = document.getElementById(`magi${id}`);
+                const statusEl = document.getElementById(`status${id}`);
+                const commentEl = document.getElementById(`comment${id}`);
+
+                panel.className = `core-panel panel-${id}`;
+                statusEl.style.display = "block";
+                
+                if (data.status === 'APPROVE') {
+                    panel.classList.add('status-approve');
+                    statusEl.innerText = "合 意";
+                    statusEl.style.color = "#000";
+                    approveCount++; completeCount++;
+                } else if (data.status === 'DENY') {
+                    panel.classList.add('status-deny');
+                    statusEl.innerText = "拒 絶";
+                    statusEl.style.color = "#fff";
+                    completeCount++;
+                } else {
+                    panel.classList.add('status-standby');
+                    statusEl.innerText = "STANDBY";
+                    statusEl.style.color = "#000";
+                }
+
+                if (data.comment) {
+                    commentEl.style.display = "block";
+                    commentEl.innerText = `"${data.comment}"`;
+                    commentEl.style.color = (data.status === 'DENY') ? "#fff" : "#222";
+                } else {
+                    commentEl.style.display = "none";
+                }
+            });
+
+            const globalBox = document.getElementById('global-status');
+            if (completeCount === 4) {
+                if (approveCount === 4) {
+                    globalBox.innerText = "合 意"; globalBox.style.color = "#33ff33"; globalBox.style.borderColor = "#33ff33";
+                } else {
+                    globalBox.innerText = "拒 絶"; globalBox.style.color = "#ff3333"; globalBox.style.borderColor = "#ff3333";
+                }
+            } else {
+                globalBox.innerText = "記 録"; globalBox.style.color = "#42bcf5"; globalBox.style.borderColor = "#42bcf5";
+            }
+        }
+
+        // --- 에디터 ---
+        function openEditor(coreId, coreName, phaseName) {
+            const inputCode = document.getElementById('access-code').value;
+            if (!verifyAccessCode(inputCode)) return;
+            if (!currentCode) return;
+            
+            editingCoreId = coreId;
+            tempVote = magiDB[currentCode][coreId].status !== 'STANDBY' ? magiDB[currentCode][coreId].status : null;
+            
+            document.getElementById('editor-title').innerText = `ACCESS: ${coreName} [${phaseName}]`;
+            document.getElementById('editor-comment').value = magiDB[currentCode][coreId].comment;
+            
+            updateVoteButtons();
+            document.getElementById('editor-overlay').style.display = "flex";
+        }
+
+        function closeEditor() {
+            document.getElementById('editor-overlay').style.display = "none";
+            editingCoreId = null;
+            tempVote = null;
+        }
+
+        function selectVote(voteType) {
+            tempVote = voteType;
+            updateVoteButtons();
+        }
+
+        function updateVoteButtons() {
+            document.getElementById('btn-approve').className = "vote-btn " + (tempVote === 'APPROVE' ? 'selected-approve' : '');
+            document.getElementById('btn-deny').className = "vote-btn " + (tempVote === 'DENY' ? 'selected-deny' : '');
+        }
+
+        async function saveRecord() {
+            if (!tempVote) return;
+            const comment = document.getElementById('editor-comment').value.trim();
+            
+            magiDB[currentCode][editingCoreId].status = tempVote;
+            magiDB[currentCode][editingCoreId].comment = comment;
+            
+            closeEditor();
+            
+            const panel = document.getElementById(`magi${editingCoreId}`);
+            panel.className = `core-panel panel-${editingCoreId} processing`;
+            document.getElementById(`status${editingCoreId}`).innerText = "記 録 中";
+            
+            // 깃허브 실시간 동기화 (패널 로딩 애니메이션으로 딜레이 커버)
+            await pushGitHubDB();
+            
+            renderCurrentAgenda();
+        }
+
+        // --- 아카이브 ---
+        function openArchiveAuth() {
+            document.getElementById('archive-auth-pw').value = '';
+            document.getElementById('archive-auth-overlay').style.display = 'flex';
+            document.getElementById('archive-auth-pw').focus();
+        }
+
+        function closeArchiveAuth() {
+            document.getElementById('archive-auth-overlay').style.display = 'none';
+        }
+        
+        function handleArchiveAuthEnter(e) {
+            if (e.key === 'Enter') {
+                verifyAndOpenArchive();
+            }
+        }
+
+        async function verifyAndOpenArchive() {
+            const inputPw = document.getElementById('archive-auth-pw').value;
+            if (!verifyAccessCode(inputPw)) return;
+            
+            closeArchiveAuth();
+            if (!(await ensureDbLoaded())) return;
+
+            renderArchiveList();
+            document.getElementById('archive-overlay').style.display = 'flex';
+        }
+        
+        function renderArchiveList() {
+            const listContainer = document.getElementById('archive-list');
+            listContainer.innerHTML = '';
+            const codes = Object.keys(magiDB);
+            
+            if (codes.length === 0) {
+                listContainer.innerHTML = '<p style="color:#888; text-align:center; padding-top:40px;">NO DATA FOUND</p>';
+                return;
+            }
+            
+            codes.reverse().forEach(code => {
+                const record = magiDB[code];
+                let approveCount = 0;
+                let completeCount = 0;
+                
+                [1, 2, 3, 4].forEach(id => {
+                    if (record[id].status === 'APPROVE') { approveCount++; completeCount++; }
+                    else if (record[id].status === 'DENY') { completeCount++; }
+                });
+                
+                let statusHtml = '<span style="color:#42bcf5">記 録 中</span>';
+                if (completeCount === 4) {
+                    statusHtml = approveCount === 4 ? '<span style="color:#33ff33">合 意</span>' : '<span style="color:#ff3333">拒 絶</span>';
+                }
+
+                const div = document.createElement('div');
+                div.className = 'archive-item';
+                div.onclick = () => loadFromArchive(code, record.agenda);
+                div.innerHTML = `
+                    <div class="archive-left">
+                        <div class="archive-code">${code}</div>
+                        <div class="archive-date">${record.timestamp || ''}</div>
+                    </div>
+                    <div class="archive-agenda">${record.agenda}</div>
+                    <div class="archive-status">${statusHtml}</div>
+                    <button class="archive-del-btn" onclick="deleteRecord('${code}', event)">[DEL]</button>
+                `;
+                listContainer.appendChild(div);
+            });
+        }
+
+        function closeArchive() {
+            document.getElementById('archive-overlay').style.display = 'none';
+        }
+
+        function loadFromArchive(code, agenda) {
+            closeArchive();
+            currentCode = code;
+            currentAgendaText = agenda;
+            
+            document.getElementById('query-input').value = agenda;
+            document.getElementById('display-code').innerText = code;
+            
+            playSearchAnimation();
+        }
+
+        async function deleteRecord(code, event) {
+            event.stopPropagation(); 
+            
+            if (confirm(`CODE: ${code} \n해당 안건의 모든 심의 기록을 영구 삭제하시겠습니까?`)) {
+                delete magiDB[code];
+                
+                // 삭제 후 깃허브 강제 동기화 
+                document.getElementById('archive-overlay').style.display = 'none';
+                document.getElementById('sync-overlay').style.display = 'flex';
+                document.getElementById('sync-message').innerText = "SYNCHRONIZING DELETION WITH GITHUB...";
+                
+                await pushGitHubDB();
+                document.getElementById('sync-overlay').style.display = 'none';
+                
+                if (currentCode === code) {
+                    currentCode = "";
+                    currentAgendaText = "";
+                    document.getElementById('display-code').innerText = "----";
+                    document.getElementById('display-priority').innerText = "---";
+                    document.getElementById('display-date').innerText = "----";
+                    document.getElementById('query-input').value = "";
+                    
+                    document.getElementById('global-status').innerText = '情 報';
+                    document.getElementById('global-status').style.color = '#42bcf5';
+                    document.getElementById('global-status').style.borderColor = '#42bcf5';
+
+                    [1, 2, 3, 4].forEach(id => {
+                        const panel = document.getElementById(`magi${id}`);
+                        panel.className = `core-panel panel-${id}`;
+                        document.getElementById(`status${id}`).innerText = "STANDBY";
+                        document.getElementById(`status${id}`).style.display = "block";
+                        document.getElementById(`status${id}`).style.color = "#000";
+                        document.getElementById(`comment${id}`).style.display = "none";
+                    });
+                }
+                
+                renderArchiveList(); 
+                document.getElementById('archive-overlay').style.display = 'flex';
+            }
+        }
+    </script>
+</body>
+</html>
