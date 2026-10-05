@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAGI SYSTEM - DECISION JOURNAL v10 (CLOUD SYNC)</title>
+    <title>MAGI SYSTEM - DECISION JOURNAL v11 (GAS SYNC)</title>
     <style>
         body { background-color: #000; color: #ff9900; font-family: 'Courier New', Courier, monospace; margin: 0; padding: 2vh 2vw; height: 96vh; display: flex; justify-content: center; align-items: center; overflow: hidden; user-select: none; }
         .magi-monitor { border: 2px solid #ff9900; width: 100%; height: 100%; position: relative; box-sizing: border-box; background: #000; }
@@ -54,7 +54,7 @@
         .btn-small:hover { background: #ff9900; color: #000; }
 
         .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 100; }
-        .modal-box { border: 2px solid #ff9900; background: #000; padding: 30px; width: 500px; max-height: 90vh; overflow-y: auto; }
+        .modal-box { border: 2px solid #ff9900; background: #000; padding: 30px; width: 600px; max-height: 90vh; overflow-y: auto; }
         .modal-box h2 { margin: 0 0 20px 0; border-bottom: 2px solid #2e8b57; padding-bottom: 10px; }
         .modal-row { margin-bottom: 15px; display: flex; flex-direction: column; }
         .modal-row label { margin-bottom: 8px; font-weight: bold; color: #42bcf5; font-size: 0.9em; }
@@ -84,7 +84,6 @@
         .archive-del-btn { background: transparent; color: #cc0000; border: 1px solid #cc0000; padding: 5px 10px; margin-left: 15px; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 0.8em; transition: 0.2s; }
         .archive-del-btn:hover { background: #cc0000; color: #fff; }
 
-        /* 클라우드 동기화 오버레이 */
         #sync-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 999; }
         #sync-overlay h1 { color: #ff9900; font-size: 3em; letter-spacing: 10px; animation: textBlink 1s infinite; }
         #sync-message { color: #42bcf5; font-size: 1.2em; margin-top: 20px; font-weight: bold; letter-spacing: 2px; }
@@ -122,19 +121,16 @@
                 <div class="core-status" id="status1">STANDBY</div>
                 <div class="core-comment" id="comment1"></div>
             </div>
-
             <div class="core-panel panel-2" id="magi2" onclick="openEditor(2, 'BALTHASAR・2', '황체기')">
                 <span class="core-name">BALTHASAR・2</span>
                 <div class="core-status" id="status2">STANDBY</div>
                 <div class="core-comment" id="comment2"></div>
             </div>
-
             <div class="core-panel panel-3" id="magi3" onclick="openEditor(3, 'CASPER・3', '배란기')">
                 <span class="core-name">CASPER・3</span>
                 <div class="core-status" id="status3">STANDBY</div>
                 <div class="core-comment" id="comment3"></div>
             </div>
-
             <div class="core-panel panel-4" id="magi4" onclick="openEditor(4, 'MARY・4', '월경기')">
                 <span class="core-name">MARY・4</span>
                 <div class="core-status" id="status4">STANDBY</div>
@@ -150,7 +146,6 @@
             </div>
             <div class="input-row">
                 <label>question:</label>
-                <!-- Placeholder 완전히 제거 -->
                 <input type="text" id="query-input" onkeypress="handleEnter(event)" autocomplete="off">
             </div>
         </div>
@@ -159,10 +154,10 @@
     <!-- 클라우드 동기화 오버레이 -->
     <div id="sync-overlay">
         <h1>UPLINK ESTABLISHED</h1>
-        <div id="sync-message">FETCHING DATABASE FROM GITHUB...</div>
+        <div id="sync-message">FETCHING DATABASE FROM CLOUD...</div>
     </div>
 
-    <!-- 1. 초기 시스템 셋업 모달 (GitHub 연동) -->
+    <!-- 1. 초기 시스템 셋업 모달 (GAS 연동) -->
     <div id="setup-overlay" class="modal-overlay">
         <div class="modal-box">
             <h2>SYSTEM INITIALIZATION</h2>
@@ -171,20 +166,8 @@
                 <input type="password" id="setup-pw">
             </div>
             <div class="modal-row">
-                <label>GITHUB PAT (Personal Access Token)</label>
-                <input type="password" id="setup-gh-pat">
-            </div>
-            <div class="modal-row">
-                <label>GITHUB REPO OWNER (유저명)</label>
-                <input type="text" id="setup-gh-owner">
-            </div>
-            <div class="modal-row">
-                <label>GITHUB REPO NAME (저장소명)</label>
-                <input type="text" id="setup-gh-repo">
-            </div>
-            <div class="modal-row">
-                <label>FILE PATH (예: magi_data.json)</label>
-                <input type="text" id="setup-gh-path" value="magi_journal.json">
+                <label>GOOGLE APPS SCRIPT URL (웹 앱 주소)</label>
+                <input type="text" id="setup-gas-url" placeholder="https://script.google.com/macros/s/...">
             </div>
             <div class="action-btns">
                 <button onclick="initializeSystem()">INITIALIZE</button>
@@ -195,26 +178,14 @@
     <!-- 2. 환경설정 수정 모달 -->
     <div id="security-overlay" class="modal-overlay">
         <div class="modal-box">
-            <h2>GITHUB LINK SETTINGS</h2>
+            <h2>CLOUD LINK SETTINGS</h2>
             <div class="modal-row">
                 <label>LOCAL ACCESS CODE (기존 암호)</label>
                 <input type="password" id="sec-pw">
             </div>
             <div class="modal-row">
-                <label>GITHUB PAT</label>
-                <input type="password" id="sec-gh-pat">
-            </div>
-            <div class="modal-row">
-                <label>GITHUB REPO OWNER</label>
-                <input type="text" id="sec-gh-owner">
-            </div>
-            <div class="modal-row">
-                <label>GITHUB REPO NAME</label>
-                <input type="text" id="sec-gh-repo">
-            </div>
-            <div class="modal-row">
-                <label>FILE PATH</label>
-                <input type="text" id="sec-gh-path">
+                <label>GOOGLE APPS SCRIPT URL</label>
+                <input type="text" id="sec-gas-url">
             </div>
             <div class="action-btns">
                 <button class="outline" onclick="closeSecuritySettings()">CANCEL</button>
@@ -272,22 +243,15 @@
     </div>
 
     <script>
-        // 메모리 상의 DB (로컬 스토리지 저장 안 함)
         let magiDB = {}; 
         let isDbLoaded = false;
-        let ghFileSha = ""; 
         
-        // 환경설정 (로컬 스토리지에 저장)
-        let magiConfig = JSON.parse(localStorage.getItem('magi_config')) || null;
+        let magiConfig = JSON.parse(localStorage.getItem('magi_config_v11')) || null;
         
         let currentCode = "";
         let currentAgendaText = "";
         let editingCoreId = null;
         let tempVote = null;
-
-        // Base64 유니코드(한글) 인코딩/디코딩 헬퍼 함수
-        function utf8_to_b64(str) { return window.btoa(unescape(encodeURIComponent(str))); }
-        function b64_to_utf8(str) { return decodeURIComponent(escape(window.atob(str))); }
 
         window.onload = () => {
             if (!magiConfig) {
@@ -297,18 +261,15 @@
 
         function initializeSystem() {
             const pw = document.getElementById('setup-pw').value;
-            const pat = document.getElementById('setup-gh-pat').value;
-            const owner = document.getElementById('setup-gh-owner').value;
-            const repo = document.getElementById('setup-gh-repo').value;
-            const path = document.getElementById('setup-gh-path').value;
+            const url = document.getElementById('setup-gas-url').value;
             
-            if (!pw || !pat || !owner || !repo || !path) {
+            if (!pw || !url) {
                 alert("모든 필드를 입력해야 합니다.");
                 return;
             }
             
-            magiConfig = { localCode: pw, ghPat: pat, ghOwner: owner, ghRepo: repo, ghPath: path };
-            localStorage.setItem('magi_config', JSON.stringify(magiConfig));
+            magiConfig = { localCode: pw, gasUrl: url };
+            localStorage.setItem('magi_config_v11', JSON.stringify(magiConfig));
             document.getElementById('setup-overlay').style.display = 'none';
         }
 
@@ -324,58 +285,35 @@
             return true;
         }
 
-        // --- GITHUB 연동 로직 ---
-        async function fetchGitHubDB() {
-            const url = `https://api.github.com/repos/${magiConfig.ghOwner}/${magiConfig.ghRepo}/contents/${magiConfig.ghPath}`;
-            const headers = { "Authorization": `token ${magiConfig.ghPat}`, "Accept": "application/vnd.github.v3+json" };
-            
+        // --- 구글 앱스 스크립트(GAS) 연동 로직 ---
+        async function fetchCloudDB() {
             try {
-                const res = await fetch(url, { headers });
+                const res = await fetch(magiConfig.gasUrl);
                 if (res.ok) {
-                    const data = await res.json();
-                    ghFileSha = data.sha;
-                    magiDB = JSON.parse(b64_to_utf8(data.content));
-                } else if (res.status === 404) {
-                    magiDB = {};
-                    ghFileSha = "";
+                    magiDB = await res.json();
                 } else {
-                    throw new Error(`HTTP ${res.status}`);
+                    magiDB = {};
                 }
                 isDbLoaded = true;
                 return true;
             } catch (e) {
-                alert("GITHUB 로드 실패: " + e.message);
+                alert("CLOUD 로드 실패: " + e.message);
                 return false;
             }
         }
 
-        async function pushGitHubDB() {
-            const url = `https://api.github.com/repos/${magiConfig.ghOwner}/${magiConfig.ghRepo}/contents/${magiConfig.ghPath}`;
-            const headers = { "Authorization": `token ${magiConfig.ghPat}`, "Accept": "application/vnd.github.v3+json", "Content-Type": "application/json" };
-            
+        async function pushCloudDB() {
             try {
-                // SHA 최신화 (충돌 방지)
-                let currentSha = ghFileSha;
-                const getRes = await fetch(url, { headers });
-                if (getRes.ok) {
-                    const data = await getRes.json();
-                    currentSha = data.sha;
-                }
-
-                const contentB64 = utf8_to_b64(JSON.stringify(magiDB, null, 2));
-                const body = {
-                    message: "MAGI System DB Update",
-                    content: contentB64,
-                    sha: currentSha || undefined
-                };
-
-                const putRes = await fetch(url, { method: 'PUT', headers, body: JSON.stringify(body) });
-                if (!putRes.ok) throw new Error(`HTTP ${putRes.status}`);
-                const putData = await putRes.json();
-                ghFileSha = putData.content.sha;
+                // GAS에서 CORS Preflight 우회를 위해 text/plain으로 전송
+                const res = await fetch(magiConfig.gasUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(magiDB)
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 return true;
             } catch (e) {
-                alert("GITHUB 저장 실패: " + e.message);
+                alert("CLOUD 저장 실패: " + e.message);
                 return false;
             }
         }
@@ -383,8 +321,8 @@
         async function ensureDbLoaded() {
             if (isDbLoaded) return true;
             document.getElementById('sync-overlay').style.display = 'flex';
-            document.getElementById('sync-message').innerText = "DOWNLOADING DATABASE FROM GITHUB...";
-            const success = await fetchGitHubDB();
+            document.getElementById('sync-message').innerText = "DOWNLOADING DATABASE FROM CLOUD...";
+            const success = await fetchCloudDB();
             document.getElementById('sync-overlay').style.display = 'none';
             return success;
         }
@@ -394,10 +332,7 @@
             if (!magiConfig) return;
             document.getElementById('security-overlay').style.display = 'flex';
             document.getElementById('sec-pw').value = '';
-            document.getElementById('sec-gh-pat').value = magiConfig.ghPat;
-            document.getElementById('sec-gh-owner').value = magiConfig.ghOwner;
-            document.getElementById('sec-gh-repo').value = magiConfig.ghRepo;
-            document.getElementById('sec-gh-path').value = magiConfig.ghPath;
+            document.getElementById('sec-gas-url').value = magiConfig.gasUrl;
         }
 
         function closeSecuritySettings() {
@@ -410,12 +345,8 @@
                 alert("ACCESS DENIED: 기존 로컬 코드가 일치하지 않습니다.");
                 return;
             }
-            magiConfig.ghPat = document.getElementById('sec-gh-pat').value;
-            magiConfig.ghOwner = document.getElementById('sec-gh-owner').value;
-            magiConfig.ghRepo = document.getElementById('sec-gh-repo').value;
-            magiConfig.ghPath = document.getElementById('sec-gh-path').value;
-            
-            localStorage.setItem('magi_config', JSON.stringify(magiConfig));
+            magiConfig.gasUrl = document.getElementById('sec-gas-url').value;
+            localStorage.setItem('magi_config_v11', JSON.stringify(magiConfig));
             closeSecuritySettings();
         }
 
@@ -436,7 +367,6 @@
                 const rawInput = document.getElementById('query-input').value.trim();
                 if (!rawInput) return;
 
-                // DB 로드 확인
                 if (!(await ensureDbLoaded())) return;
                 
                 const parsedData = calculatePriority(rawInput);
@@ -450,7 +380,7 @@
                     currentCode = existingCode;
                     if (currentPriority !== '---' && magiDB[currentCode].priority !== currentPriority) {
                         magiDB[currentCode].priority = currentPriority;
-                        isNewRecord = true; // 변경사항 PUSH 필요
+                        isNewRecord = true; 
                     }
                 } else {
                     currentCode = generateUniqueAlphanumericCode();
@@ -471,9 +401,8 @@
                 
                 playSearchAnimation();
 
-                // 백그라운드 깃허브 PUSH
                 if (isNewRecord) {
-                    pushGitHubDB();
+                    pushCloudDB();
                 }
             }
         }
@@ -618,9 +547,7 @@
             panel.className = `core-panel panel-${editingCoreId} processing`;
             document.getElementById(`status${editingCoreId}`).innerText = "記 録 中";
             
-            // 깃허브 실시간 동기화 (패널 로딩 애니메이션으로 딜레이 커버)
-            await pushGitHubDB();
-            
+            await pushCloudDB();
             renderCurrentAgenda();
         }
 
@@ -714,12 +641,11 @@
             if (confirm(`CODE: ${code} \n해당 안건의 모든 심의 기록을 영구 삭제하시겠습니까?`)) {
                 delete magiDB[code];
                 
-                // 삭제 후 깃허브 강제 동기화 
                 document.getElementById('archive-overlay').style.display = 'none';
                 document.getElementById('sync-overlay').style.display = 'flex';
-                document.getElementById('sync-message').innerText = "SYNCHRONIZING DELETION WITH GITHUB...";
+                document.getElementById('sync-message').innerText = "SYNCHRONIZING DELETION WITH CLOUD...";
                 
-                await pushGitHubDB();
+                await pushCloudDB();
                 document.getElementById('sync-overlay').style.display = 'none';
                 
                 if (currentCode === code) {
